@@ -1,0 +1,145 @@
+import React, { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const categories = [
+  "Peralatan Sholat",
+  "Peralatan Mandi",
+  "Peralatan Tidur",
+  "Skincare",
+  "Makeup",
+  "Sprei & Bedcover",
+  "Tas",
+  "Sepatu",
+  "Buah-buahan",
+  "Baju Tradisional",
+  "Baju Buat Keluar",
+  "Makanan",
+  "Perhiasan"
+];
+
+export default function SeserahanApp() {
+  const [items, setItems] = useState([]);
+  const [view, setView] = useState("home");
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [formData, setFormData] = useState({ name: "", brand: "", price: "" });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("seserahanItems");
+      if (saved) setItems(JSON.parse(saved));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("seserahanItems", JSON.stringify(items));
+    }
+  }, [items]);
+
+  const addItem = () => {
+    if (!formData.name || !formData.brand || !formData.price) return;
+    const newItem = {
+      category: selectedCategory,
+      name: formData.name,
+      brand: formData.brand,
+      price: formData.price,
+      ready: false
+    };
+    setItems([...items, newItem]);
+    setFormData({ name: "", brand: "", price: "" });
+    setView("select-category");
+  };
+
+  const toggleReady = (index) => {
+    const updated = [...items];
+    updated[index].ready = !updated[index].ready;
+    setItems(updated);
+  };
+
+  const deleteItem = (index) => {
+    const updated = [...items];
+    updated.splice(index, 1);
+    setItems(updated);
+  };
+
+  const total = items.reduce((acc, item) => acc + Number(item.price || 0), 0);
+
+  return (
+    <div className="p-4 space-y-4 bg-[#fb8888] min-h-screen text-white">
+      {view === "home" && (
+        <div className="flex flex-col gap-4">
+          <Button className="bg-white text-[#fb8888] hover:bg-[#ffe2e2]" onClick={() => setView("select-category")}>Tambahkan Seserahan</Button>
+          <Button className="bg-white text-[#fb8888] hover:bg-[#ffe2e2]" onClick={() => setView("list")}>List Seserahan</Button>
+        </div>
+      )}
+
+      {view === "select-category" && (
+        <Card className="p-4 bg-white text-[#fb8888]">
+          <h2 className="text-lg font-bold mb-4">Pilih Kategori</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {categories.map((cat) => (
+              <Button className="bg-[#fb8888] text-white hover:bg-[#f76b6b]" key={cat} onClick={() => {
+                setSelectedCategory(cat);
+                setView("add-item");
+              }}>{cat}</Button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {view === "add-item" && (
+        <Card className="p-4 bg-white text-[#fb8888]">
+          <h2 className="text-lg font-bold mb-4">Tambah Barang - {selectedCategory}</h2>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <Input
+              className="text-[#fb8888]"
+              placeholder="Nama Barang"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+            <Input
+              className="text-[#fb8888]"
+              placeholder="Merk"
+              value={formData.brand}
+              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+            />
+            <Input
+              className="text-[#fb8888]"
+              type="number"
+              placeholder="Harga"
+              value={formData.price}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button className="bg-[#fb8888] text-white hover:bg-[#f76b6b]" onClick={addItem}>Simpan Barang</Button>
+            <Button className="border border-[#fb8888] text-[#fb8888]" onClick={() => setView("home")} variant="outline">Kembali ke Menu</Button>
+          </div>
+        </Card>
+      )}
+
+      {view === "list" && (
+        <Card className="p-4 bg-white text-[#fb8888]">
+          <h2 className="text-lg font-bold mb-4">Daftar Seserahan</h2>
+          {items.map((item, idx) => (
+            <div key={idx} className="grid grid-cols-6 gap-2 items-center mb-2">
+              <span>{item.category}</span>
+              <span>{item.name}</span>
+              <span>{item.brand}</span>
+              <span>Rp {Number(item.price).toLocaleString("id-ID")}</span>
+              <Checkbox checked={item.ready} onCheckedChange={() => toggleReady(idx)} />
+              <Button className="bg-red-200 text-[#fb8888] hover:bg-red-300" size="sm" onClick={() => deleteItem(idx)}>Hapus</Button>
+            </div>
+          ))}
+          <div className="text-lg font-bold mt-4">
+            Total Harga: Rp {total.toLocaleString("id-ID")}
+          </div>
+          <Button className="mt-4 bg-[#fb8888] text-white hover:bg-[#f76b6b]" onClick={() => setView("home")}>Kembali ke Menu</Button>
+        </Card>
+      )}
+    </div>
+  );
+}
